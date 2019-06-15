@@ -54,3 +54,4 @@ E:\SVN.GIT\ukCodeSample\ukCodeSample\bin\Debug\System.ValueTuple.dll
 E:\SVN.GIT\ukCodeSample\ukCodeSample\bin\Debug\System.ValueTuple.xml
 E:\SVN.GIT\ukCodeSample\ukCodeSample\bin\Debug\Newtonsoft.Json.dll
 E:\SVN.GIT\ukCodeSample\ukCodeSample\bin\Debug\Newtonsoft.Json.xml
+E:\SVN.GIT\ukCodeSample\ukCodeSample\bin\Debug\System.Runtime.InteropServices.RuntimeInformation.dll
