@@ -7,7 +7,7 @@ using System.Windows;
 namespace ukCodeSample
 {
     /// <summary>
-    /// Interaction logic for MainWindow.xaml
+    ///     Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
@@ -16,13 +16,9 @@ namespace ukCodeSample
             InitializeComponent();
             //Reload CSV if not cached in DB
             if (DBAccess.CheckCacheCsv())
-            {
                 DBAccess.ReloadLoadCsv();
-            }
             else
-            {
                 DBAccess.LoadFromDB();
-            }
         }
 
         //Road and parse CSV inte database
@@ -35,7 +31,7 @@ namespace ukCodeSample
         //List Most popular domains.
         private void Domains_Click(object sender, RoutedEventArgs e)
         {
-            Dictionary<String, int> dict = new Dictionary<string, int>(); 
+            Dictionary<string, int> dict = new Dictionary<string, int>(); 
             DBAccess.GetEmails(dict);
 
             var sortedDict = from entry in dict orderby entry.Value descending select entry;
@@ -51,17 +47,11 @@ namespace ukCodeSample
 
         private void Cache()
         {
-            this.Dispatcher.Invoke(new Action(() =>
-            {
-                textBlockLoading.Text = "Loading...";
-            }));
-            List<String> postals = new List<string>();
+            Dispatcher.Invoke(() => { textBlockLoading.Text = "Loading..."; });
+            var postals = new List<string>();
             DBAccess.GetPostals(postals);
             DBAccess.CacheLocation(postals);
-            this.Dispatcher.Invoke(new Action(() =>
-            {
-                textBlockLoading.Text = "";
-            }));
+            Dispatcher.Invoke(() => { textBlockLoading.Text = ""; });
         }
 
         /*
@@ -80,26 +70,19 @@ namespace ukCodeSample
 
         private void RunKmeans()
         {
-            List<String> load = new List<string>();
+            List<string> load = new List<string>();
             load.Add("Loading...");
-            this.Dispatcher.Invoke(new Action(() =>
-            {
-                kmeansTable.ItemsSource = load;
-            }));
+            Dispatcher.Invoke(() => { kmeansTable.ItemsSource = load; });
             if (DBAccess.CheckCacheLocation())
             {
-                List<String> postals = new List<string>();
-                DBAccess.GetPostals(postals);
-                DBAccess.CacheLocation(postals);
+                Cache();
             }
-            List<DBAccess.Location> l = DBAccess.GetLocations();
-            Kmeans cluster = new Kmeans(l);
-            List<String> clusters = cluster.Cluster();
 
-            this.Dispatcher.Invoke(new Action(() =>
-            {
-                kmeansTable.ItemsSource = clusters;
-            }));
+            var l = DBAccess.GetLocations();
+            var cluster = new Kmeans(l);
+            var clusters = cluster.Cluster();
+
+            Dispatcher.Invoke(() => { kmeansTable.ItemsSource = clusters; });
         }
 
         //Cluster entries by region
@@ -115,22 +98,14 @@ namespace ukCodeSample
             load.Add("Loading...");
             if (DBAccess.CheckCacheLocation())
             {
-                this.Dispatcher.Invoke(new Action(() =>
-                {
-                    RegionTable.ItemsSource = load;
-                }));
-                List<String> postals = new List<string>();
-                DBAccess.GetPostals(postals);
-                DBAccess.CacheLocation(postals);
+                Dispatcher.Invoke(() => { RegionTable.ItemsSource = load; });
+                Cache();
             }
 
-            Dictionary<String, int> dict = new Dictionary<string, int>();
+            Dictionary<string, int> dict = new Dictionary<string, int>();
             DBAccess.GetRegions(dict);
             var sortedDict = from entry in dict orderby entry.Value descending select entry;
-            this.Dispatcher.Invoke(new Action(() =>
-            {
-                RegionTable.ItemsSource = sortedDict;
-            }));
+            Dispatcher.Invoke(() => { RegionTable.ItemsSource = sortedDict; });
         }
     }
 }
