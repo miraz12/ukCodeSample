@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Windows;
 
 namespace ukCodeSample
@@ -27,7 +28,8 @@ namespace ukCodeSample
         //Road and parse CSV inte database
         private void ButtonParse_Click(object sender, RoutedEventArgs e)
         {
-            DBAccess.ReloadLoadCsv();
+            Thread thread = new Thread(DBAccess.ReloadLoadCsv);
+            thread.Start();
         }
 
         //List Most popular domains.
@@ -43,9 +45,23 @@ namespace ukCodeSample
         //Ability to cache data in database to refrain from overloading the api and speeding data fetching time.
         private void Cache_Click(object sender, RoutedEventArgs e)
         {
+            Thread t = new Thread(Cache);
+            t.Start();
+        }
+
+        private void Cache()
+        {
+            this.Dispatcher.Invoke(new Action(() =>
+            {
+                textBlockLoading.Text = "Loading...";
+            }));
             List<String> postals = new List<string>();
             DBAccess.GetPostals(postals);
             DBAccess.CacheLocation(postals);
+            this.Dispatcher.Invoke(new Action(() =>
+            {
+                textBlockLoading.Text = "";
+            }));
         }
 
         /*
@@ -58,6 +74,18 @@ namespace ukCodeSample
          */
         private void ClusterKmeans_Click(object sender, RoutedEventArgs e)
         {
+            Thread t = new Thread(RunKmeans);
+            t.Start();
+        }
+
+        private void RunKmeans()
+        {
+            List<String> load = new List<string>();
+            load.Add("Loading...");
+            this.Dispatcher.Invoke(new Action(() =>
+            {
+                kmeansTable.ItemsSource = load;
+            }));
             if (DBAccess.CheckCacheLocation())
             {
                 List<String> postals = new List<string>();
@@ -65,16 +93,32 @@ namespace ukCodeSample
                 DBAccess.CacheLocation(postals);
             }
             List<DBAccess.Location> l = DBAccess.GetLocations();
-            Kmeans cluster = new Kmeans(l); 
+            Kmeans cluster = new Kmeans(l);
             List<String> clusters = cluster.Cluster();
-            kmeansTable.ItemsSource = clusters;
+
+            this.Dispatcher.Invoke(new Action(() =>
+            {
+                kmeansTable.ItemsSource = clusters;
+            }));
         }
 
         //Cluster entries by region
         private void ClusterRegion_Click(object sender, RoutedEventArgs e)
         {
+            Thread t = new Thread(ClusterRegion);
+            t.Start();
+        }
+
+        private void ClusterRegion()
+        {
+            List<String> load = new List<string>();
+            load.Add("Loading...");
             if (DBAccess.CheckCacheLocation())
             {
+                this.Dispatcher.Invoke(new Action(() =>
+                {
+                    RegionTable.ItemsSource = load;
+                }));
                 List<String> postals = new List<string>();
                 DBAccess.GetPostals(postals);
                 DBAccess.CacheLocation(postals);
@@ -83,7 +127,10 @@ namespace ukCodeSample
             Dictionary<String, int> dict = new Dictionary<string, int>();
             DBAccess.GetRegions(dict);
             var sortedDict = from entry in dict orderby entry.Value descending select entry;
-            RegionTable.ItemsSource = sortedDict;
+            this.Dispatcher.Invoke(new Action(() =>
+            {
+                RegionTable.ItemsSource = sortedDict;
+            }));
         }
     }
 }

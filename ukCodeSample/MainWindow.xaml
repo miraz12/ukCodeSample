@@ -16,6 +16,7 @@
         <ListBox x:Name="domainBox" HorizontalAlignment="Left" Height="240" Margin="10,10,0,0" VerticalAlignment="Top" Width="150" RenderTransformOrigin="-0.013,0.247"/>
         <ListBox x:Name="kmeansTable" HorizontalAlignment="Left" Height="240" Margin="320,10,0,0" VerticalAlignment="Top" Width="150" RenderTransformOrigin="-0.013,0.247"/>
         <ListBox x:Name="RegionTable" HorizontalAlignment="Left" Height="240" Margin="165,10,0,0" VerticalAlignment="Top" Width="150" RenderTransformOrigin="-0.013,0.247"/>
+        <TextBlock x:Name="textBlockLoading" HorizontalAlignment="Left" Margin="475,58,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="75"/>
 
     </Grid>
 </Window>
