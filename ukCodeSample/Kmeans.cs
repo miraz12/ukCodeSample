@@ -2,51 +2,25 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Win32;
 
 namespace ukCodeSample
 {
-    class Kmeans
+    internal class Kmeans
     {
-        private class DataPoint
-        {
-            public double longitude { get; set; }
-            public double latitude { get; set; }
-            public int cluster { get; set; }
-        }
+        private readonly List<DataPoint> cluseter = new List<DataPoint>();
 
-        private List<DataPoint> locationData = new List<DataPoint>();
-        private List<DataPoint> cluseter = new List<DataPoint>();
-        private int numClusters = 9; //same as number of regions in the UK
-        private double minLat;
-        private double maxLat;
-        private double minLong;
-        private double maxLong;
+        private readonly List<DataPoint> locationData = new List<DataPoint>();
+        private readonly int numClusters = 9; //same as number of regions in the UK
+
 
         public Kmeans(List<DBAccess.Location> l)
         {
-            maxLong = minLong = l[0].longitude;
-            maxLat = minLat = l[0].latitude;
+            //Populate data list
             for (int i = 0; i < l.Count; i++)
             {
-                double longi = l[i].longitude;
-                double latil = l[i].latitude;
-
-                //Save min max so we can now between which coordinates we should place the initial centroids.
-                if (longi > maxLong)
-                    maxLong = longi;
-                else if (longi < minLong)
-                    minLong = longi;
-
-                if (latil > maxLat)
-                    maxLat = latil;
-                else if (latil < minLat)
-                    minLat = latil;
-
                 DataPoint entry = new DataPoint();
                 entry.longitude = l[i].longitude;
-                entry.latitude= l[i].latitude;
+                entry.latitude = l[i].latitude;
                 entry.cluster = -1;
                 locationData.Add(entry);
             }
@@ -57,10 +31,12 @@ namespace ukCodeSample
         private void InitClusters()
         {
             Random rand = new Random(numClusters);
-            for (int i = 0; i < numClusters; i++) //Make sure no cluster is empty by assigning one data point to each cluster
+
+            //Make sure no cluster is empty by assigning one data point to each cluster
+            for (int i = 0; i < numClusters; i++)
             {
                 locationData[i].cluster = i;
-                cluseter.Add(new DataPoint() { cluster = i });
+                cluseter.Add(new DataPoint {cluster = i});
             }
 
             for (int i = numClusters; i < locationData.Count; i++) //Randomly assign the rest of the data points
@@ -70,7 +46,7 @@ namespace ukCodeSample
             }
         }
 
-        public List<String> Cluster()
+        public List<string> Cluster()
         {
             bool change = true;
             bool sucess = true;
@@ -78,6 +54,7 @@ namespace ukCodeSample
             int maxIter = locationData.Count * 10;
             int iter = 0;
 
+            //Loop until fail, there is no change or maximum iterations have been reached
             while (sucess && change && iter < maxIter)
             {
                 ++iter;
@@ -86,7 +63,7 @@ namespace ukCodeSample
             }
 
             //Return number of entries in each cluster.
-            List<String> outList = new List<string>();
+            List<string> outList = new List<string>();
             var group = locationData.GroupBy(s => s.cluster).OrderBy(s => s.Key);
             foreach (var g in group)
             {
@@ -97,9 +74,11 @@ namespace ukCodeSample
                 }
                 outList.Add("Cluster " + g.Key + " entries: " + entries);
             }
+
             return outList;
         }
 
+        //Recalculate the clusters centroid positions.
         private bool RecalculateMeans()
         {
             if (EmptyClusters())
@@ -124,9 +103,11 @@ namespace ukCodeSample
                 longitude = 0.0;
                 latitude = 0.0;
             }
+
             return true;
         }
 
+        //Calculate distance between each entry and each centroid and group accordingly.
         private bool RecalculateClusters()
         {
             bool change = false;
@@ -155,6 +136,7 @@ namespace ukCodeSample
             return change;
         }
 
+        //Return cluster with minimum distance
         private int GetMinIndex(double[] distances)
         {
             int returnIndex = 0;
@@ -171,24 +153,35 @@ namespace ukCodeSample
             return returnIndex;
         }
 
-        //Convert long lat to cartesian coordinates and get Euclidean distance. 
+        //Get distance betewen long lat with Haversine function
         private double Distance(DataPoint loc1, DataPoint loc2)
         {
-            double radius = 6371; //km
+            double radius = 6378.137; //km
 
-            double x1 = radius * Math.Cos(loc1.latitude) * Math.Cos(loc1.longitude);
-            double y1 = radius * Math.Cos(loc1.latitude) * Math.Sin(loc1.longitude);
+            double rad1Y = loc1.latitude * Math.PI / 180.0;
+            double rad2Y = loc2.latitude * Math.PI / 180.0;
 
-            double x2 = radius * Math.Cos(loc2.latitude) * Math.Cos(loc2.longitude);
-            double y2 = radius * Math.Cos(loc2.latitude) * Math.Sin(loc2.longitude);
+            double latDistance = (loc2.latitude - loc1.latitude) * Math.PI / 180.0;
+            double lonDistance = (loc2.longitude - loc1.longitude) * Math.PI / 180.0;
 
-            return (Math.Pow(x2-x1, 2) + Math.Pow(y2-y1, 2)); //squared distance to make it faster
+            double a = Math.Sin(latDistance / 2)
+                       * Math.Sin(latDistance / 2)
+                       + Math.Cos(rad1Y)
+                       * Math.Cos(rad2Y)
+                       * Math.Sin(lonDistance / 2) * Math.Sin(lonDistance / 2);
+
+            double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+            double distance = radius * c * 1000;
+
+            return distance; 
         }
 
-        private bool EmptyClusters() //Check for empty clusters
+        //Check for empty clusters
+        private bool EmptyClusters() 
         {
             //Check for empty clusters
-            var clusterGroupsEmpty = locationData.GroupBy(s => s.cluster).OrderBy(s => s.Key).Select(g => new { Cluster = g.Key, Count = g.Count() });
+            var clusterGroupsEmpty = locationData.GroupBy(s => s.cluster).OrderBy(s => s.Key)
+                .Select(g => new {Cluster = g.Key, Count = g.Count()});
             foreach (var item in clusterGroupsEmpty)
             {
                 if (item.Count == 0)
@@ -196,6 +189,13 @@ namespace ukCodeSample
             }
 
             return false;
+        }
+
+        private class DataPoint
+        {
+            public double longitude { get; set; }
+            public double latitude { get; set; }
+            public int cluster { get; set; }
         }
     }
 }

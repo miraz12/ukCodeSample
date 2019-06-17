@@ -25,6 +25,7 @@ namespace ukCodeSample
                     cnn.Open();
                     using (IDbCommand cmd = cnn.CreateCommand())
                     {
+                        //Clear old data
                         cmd.CommandType = CommandType.Text;
                         cmd.CommandText = "DELETE FROM Location;" +
                                           "DELETE FROM Email;" +
@@ -55,6 +56,7 @@ namespace ukCodeSample
                                 }
                             }
 
+                            //Update cache entry in cache table.
                             cmd.CommandText = "INSERT INTO CacheInfo (CsvCacheDate) values (@CsvCacheDate);";
                             cmd.Parameters.Add(new SQLiteParameter("CsvCacheDate", DateTime.Now));
                             cmd.ExecuteNonQuery();
@@ -136,8 +138,8 @@ namespace ukCodeSample
                     cnn.Open();
                     using (IDbCommand cmd = cnn.CreateCommand())
                     {
-                        int numFetches = entries.Count / 100;
-                        for (int i = 0; i < numFetches; i++)
+                        //The postecodes API can only take 100 postcodes at a time so split everything into groups of 100.
+                        for (var i = 0; i < entries.Count / 100; i++)
                         {
                             cmd.CommandText = "SELECT * FROM Location LIMIT " + 100 + " OFFSET " + 100 * i + ";";
                             cmd.CommandType = CommandType.Text;
@@ -183,19 +185,16 @@ namespace ukCodeSample
                             cmd.CommandText =
                                 "UPDATE Location  SET Longitude = @Longitude, Latitude = @Latitude, Region = @Region WHERE Postal = @Key;";
                             List<Location> locations = new List<Location>();
-                            locations.Capacity = 500;
-                            Thread[] objThread = new Thread[5];
+                            Thread[] threadList = new Thread[5];
                             for (int i = 0; i < postals.Count; i++)
                             {
                                 int iCopy = i;
-                                objThread[iCopy] = new Thread(() => GetLocationFromPostal(postals[iCopy], locations));
-                                objThread[iCopy].Start();
+                                threadList[iCopy] = new Thread(() => GetLocationFromPostal(postals[iCopy], locations));
+                                threadList[iCopy].Start();
                             }
-
-                            for (int i = 0; i < objThread.Length; i++)
+                            for (var i = 0; i < threadList.Length; i++)
                             {
-                                // Wait until thread is finished.
-                                objThread[i].Join();
+                                threadList[i].Join();
                             }
                             //Add long lat data to database so that we don't have to query API every time. 
                             for (int i = 0; i < locations.Count; i++)
@@ -243,7 +242,7 @@ namespace ukCodeSample
                 {
                     var responseText = streamReader.ReadToEnd();
                     PostcodesBulk bulk = JsonConvert.DeserializeObject<PostcodesBulk>(responseText);
-                    //Loop through the json string fetching long and lat. 
+                    //Loop through the json string fetching postalcode info. 
                     for (int i = 0; i < bulk.result.Count; i++)
                     {
                         Location loc = new Location();
@@ -275,7 +274,7 @@ namespace ukCodeSample
                                 loc.longitude = entry.result.longitude;
                                 loc.latitude = entry.result.latitude;
                                 loc.region =
-                                    "invalid"; //Could fetch this from closest postal code from long lat but trying to keep things simple.
+                                    "Terminated"; //Could fetch this from closest postal code from long lat but trying to keep things simple.
                                 locations.Add(loc);
                             }
                         }
